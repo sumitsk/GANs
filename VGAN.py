@@ -4,11 +4,8 @@ import torch.nn as nn
 from utils import images_to_vectors, vectors_to_images, noise, real_data_target, fake_data_target, Logger
 
 
-# discriminator network
 class DiscriminatorNet(torch.nn.Module):
-    """
-    A three hidden-layer discriminative neural network
-    """
+    # A three hidden-layer discriminative neural network
     def __init__(self):
         super(DiscriminatorNet, self).__init__()
         n_features = 784
@@ -43,9 +40,7 @@ class DiscriminatorNet(torch.nn.Module):
 
 
 class GeneratorNet(torch.nn.Module):
-    """
-    A three hidden-layer generative neural network
-    """
+    # A three hidden-layer generative neural network
     def __init__(self):
         super(GeneratorNet, self).__init__()
         n_features = 100
@@ -78,12 +73,12 @@ class GeneratorNet(torch.nn.Module):
 
 
 class VanillaGAN(object):
-    def __init__(self, data_loader):
+    def __init__(self, args, data_loader):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.gen = GeneratorNet().to(self.device)
         self.disc = DiscriminatorNet().to(self.device)
 
-        lr = 0.0002
+        lr = args.lr
         self.gen_optim = torch.optim.Adam(self.gen.parameters(), lr=lr)
         self.disc_optim = torch.optim.Adam(self.disc.parameters(), lr=lr)
 
@@ -91,7 +86,7 @@ class VanillaGAN(object):
 
         self.num_test_samples = 16
         self.data_loader = data_loader
-        self.logger = Logger(model_name='VGAN', data_name='MNIST')
+        self.logger = Logger(model_name='VGAN', data_name='MNIST', save_dir=args.save_dir, log_dir=args.log_dir)
 
     def train_disc(self, real_data, fake_data):
         # Reset gradients

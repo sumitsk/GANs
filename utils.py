@@ -10,23 +10,27 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 # TensorBoard Data will be stored in './runs' path
+import ipdb
 
 
 class Logger:
-    def __init__(self, model_name, data_name):
+    def __init__(self, model_name, data_name, log_dir, save_dir):
         self.model_name = model_name
         self.data_name = data_name
 
         self.comment = '{}_{}'.format(model_name, data_name)
+        self.images_save_dir = save_dir+'/images/'
+        self.models_save_dir = save_dir+'/model/'
+
         self.data_subdir = '{}/{}'.format(model_name, data_name)
 
         # TensorBoard
-        self.writer = SummaryWriter(comment=self.comment)
+        self.writer = SummaryWriter(comment=self.comment, log_dir=log_dir)
 
     def log(self, d_error, g_error, epoch, n_batch, num_batches):
-        if isinstance(d_error, torch.autograd.Variable):
+        if d_error.requires_grad:
             d_error = d_error.data.cpu().numpy()
-        if isinstance(g_error, torch.autograd.Variable):
+        if g_error.requires_grad:
             g_error = g_error.data.cpu().numpy()
 
         step = Logger._step(epoch, n_batch, num_batches)
@@ -57,41 +61,36 @@ class Logger:
         self.save_torch_images(horizontal_grid, grid, epoch, n_batch)
 
     def save_torch_images(self, horizontal_grid, grid, epoch, n_batch, plot_horizontal=True):
-        out_dir = './data/images/{}'.format(self.data_subdir)
-        Logger._make_dir(out_dir)
+        # out_dir = './data/images/{}'.format(self.data_subdir)
+        Logger._make_dir(self.images_save_dir)
 
-        # Plot and save horizontal
-        # fig = plt.figure(figsize=(16, 16))
-        # plt.imshow(np.moveaxis(horizontal_grid.numpy(), 0, -1))
-        # plt.axis('off')
-        # if plot_horizontal:
-        #     display.display(plt.gcf())
-        # self._save_images(fig, epoch, n_batch, 'hori')
-        self._save_images(None, epoch, n_batch, 'hori')
-        # plt.close()
+        # save horizontal
+        fig = plt.figure(figsize=(16, 16))
+        plt.imshow(np.moveaxis(horizontal_grid.numpy(), 0, -1))
+        plt.axis('off')
+        self._save_images(fig, epoch, n_batch, 'hori')
+        plt.close()
 
         # Save squared
-        # fig = plt.figure()
-        # plt.imshow(np.moveaxis(grid.numpy(), 0, -1))
-        # plt.axis('off')
-        # self._save_images(fig, epoch, n_batch)
-        self._save_images(None, epoch, n_batch)
-        # plt.close()
+        fig = plt.figure()
+        plt.imshow(np.moveaxis(grid.numpy(), 0, -1))
+        plt.axis('off')
+        self._save_images(fig, epoch, n_batch)
+        plt.close()
 
     def _save_images(self, fig, epoch, n_batch, comment=''):
-        out_dir = './data/images/{}'.format(self.data_subdir)
-        Logger._make_dir(out_dir)
-        # fig.savefig('{}/{}_epoch_{}_batch_{}.png'.format(out_dir, comment, epoch, n_batch))
-        plt.savefig('{}/{}_epoch_{}_batch_{}.png'.format(out_dir, comment, epoch, n_batch))
+        # out_dir = './data/images/{}'.format(self.data_subdir)
+        Logger._make_dir(self.images_save_dir)
+        fig.savefig('{}/{}_epoch_{}_batch_{}.png'.format(self.images_save_dir, comment, epoch, n_batch))
 
     def display_status(self, epoch, num_epochs, n_batch, num_batches, d_error, g_error, d_pred_real, d_pred_fake):
-        if isinstance(d_error, torch.autograd.Variable):
+        if d_error.requires_grad:
             d_error = d_error.data.cpu().numpy()
-        if isinstance(g_error, torch.autograd.Variable):
+        if g_error.requires_grad:
             g_error = g_error.data.cpu().numpy()
-        if isinstance(d_pred_real, torch.autograd.Variable):
+        if d_pred_real.requires_grad:
             d_pred_real = d_pred_real.data
-        if isinstance(d_pred_fake, torch.autograd.Variable):
+        if d_pred_fake.requires_grad:
             d_pred_fake = d_pred_fake.data
         
         print('Epoch: [{}/{}], Batch Num: [{}/{}]'.format(epoch,num_epochs, n_batch, num_batches))
@@ -99,17 +98,15 @@ class Logger:
         print('D(x): {:.4f}, D(G(z)): {:.4f}'.format(d_pred_real.mean(), d_pred_fake.mean()))
 
     def save_models(self, generator, discriminator, epoch):
-        out_dir = './data/models/{}'.format(self.data_subdir)
-        Logger._make_dir(out_dir)
-        torch.save(generator.state_dict(), '{}/G_epoch_{}'.format(out_dir, epoch))
-        torch.save(discriminator.state_dict(), '{}/D_epoch_{}'.format(out_dir, epoch))
+        # out_dir = './data/models/{}'.format(self.data_subdir)
+        Logger._make_dir(self.models_save_dir)
+        torch.save(generator.state_dict(), '{}/G_epoch_{}'.format(self.models_save_dir, epoch))
+        torch.save(discriminator.state_dict(), '{}/D_epoch_{}'.format(self.models_save_dir, epoch))
 
     def close(self):
         self.writer.close()
 
     # Private Functionality
-
-    @staticmethod
     def _step(epoch, n_batch, num_batches):
         return epoch * num_batches + n_batch
 

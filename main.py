@@ -1,7 +1,8 @@
 import torch
 from torchvision import transforms, datasets
 
-from model import VanillaGAN
+from VGAN import VanillaGAN
+from arguments import get_args
 
 
 def mnist_data():
@@ -13,10 +14,11 @@ def mnist_data():
     out_dir = '{}/dataset'.format(DATA_FOLDER)
     return datasets.MNIST(root=out_dir, train=True, transform=compose, download=True)
 
-
 data = mnist_data()
 data_loader = torch.utils.data.DataLoader(data, batch_size=100, shuffle=True)
 
-gan = VanillaGAN(data_loader=data_loader)
-gan.train(num_epochs=200)
+args = get_args()
+
+gan = VanillaGAN(args, data_loader=data_loader)
+gan.train(num_epochs=args.num_epochs)
 
